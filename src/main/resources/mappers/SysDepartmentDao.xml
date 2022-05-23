@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gx.dao.ISysDepartmentDao">
+    <resultMap id="BaseResultMap" type="com.gx.po.SysDepartment">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate"/>
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified"/>
+        <result column="parent_id" jdbcType="INTEGER" property="parentId"/>
+        <result column="department_name" jdbcType="VARCHAR" property="departmentName"/>
+        <result column="telephone" jdbcType="VARCHAR" property="telephone"/>
+        <result column="fax" jdbcType="VARCHAR" property="fax"/>
+        <result column="email" jdbcType="VARCHAR" property="email"/>
+        <result column="principal" jdbcType="VARCHAR" property="principal"/>
+        <result column="department_sort" jdbcType="INTEGER" property="departmentSort"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+    </resultMap>
+
+    <!--查询所有部门信息-->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT id,
+               gmt_create,
+               parent_id,
+               department_name,
+               telephone,
+               fax,
+               email,
+               principal,
+               department_sort,
+               remark
+        FROM sys_department
+        ORDER BY department_sort
+    </select>
+
+    <!--查询部门数据 by 主键-->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT id,
+               gmt_create,
+               parent_id,
+               department_name,
+               telephone,
+               fax,
+               email,
+               principal,
+               department_sort,
+               remark
+        FROM sys_department
+        WHERE id = #{id}
+    </select>
+
+    <!--根据父id查询部门个数-->
+    <select id="countAllByPid" resultType="java.lang.Integer">
+        SELECT COUNT(id)
+        FROM sys_department
+        WHERE parent_id = #{pid}
+    </select>
+
+    <!--新增部门-->
+    <insert id="insert" parameterType="com.gx.po.SysDepartment">
+        insert into sys_department
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            gmt_create,
+            <if test="gmtModified != null">gmt_modified,</if>
+            <if test="parentId != null">parent_id,</if>
+            <if test="departmentName != null">department_name,</if>
+            <if test="telephone != null">telephone,</if>
+            <if test="fax != null">fax,</if>
+            <if test="email != null">email,</if>
+            <if test="principal != null">principal,</if>
+            <if test="departmentSort != null">department_sort,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            NOW(),
+            <if test="gmtModified != null">#{gmtModified,jdbcType=TIMESTAMP},</if>
+            <if test="parentId != null">#{parentId,jdbcType=INTEGER},</if>
+            <if test="departmentName != null">#{departmentName,jdbcType=VARCHAR},</if>
+            <if test="telephone != null">#{telephone,jdbcType=VARCHAR},</if>
+            <if test="fax != null">#{fax,jdbcType=VARCHAR},</if>
+            <if test="email != null">#{email,jdbcType=VARCHAR},</if>
+            <if test="principal != null">#{principal,jdbcType=VARCHAR},</if>
+            <if test="departmentSort != null">#{departmentSort,jdbcType=INTEGER},</if>
+            <if test="remark != null">#{remark,jdbcType=VARCHAR},</if>
+        </trim>
+    </insert>
+
+    <!--更新部门-->
+    <update id="update" parameterType="com.gx.po.SysDepartment">
+        update sys_department
+        <set>
+            <if test="gmtCreate != null">gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},</if>
+            gmt_modified = NOW(),
+            <if test="parentId != null">parent_id = #{parentId,jdbcType=INTEGER},</if>
+            <if test="departmentName != null">department_name = #{departmentName,jdbcType=VARCHAR},</if>
+            <if test="telephone != null">telephone = #{telephone,jdbcType=VARCHAR},</if>
+            <if test="fax != null">fax = #{fax,jdbcType=VARCHAR},</if>
+            <if test="email != null">email = #{email,jdbcType=VARCHAR},</if>
+            <if test="principal != null">principal = #{principal,jdbcType=VARCHAR},</if>
+            <if test="departmentSort != null">department_sort = #{departmentSort,jdbcType=INTEGER},</if>
+            <if test="remark != null">remark = #{remark,jdbcType=VARCHAR},</if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!--删除部门 by id-->
+    <delete id="deleteById" parameterType="java.lang.Integer">
+        delete
+        from sys_department
+        where id = #{id}
+    </delete>
+
+    <!--查询角色的授权情况 by 菜单URL-->
+    <update id="updateSortPlus1" >
+        UPDATE sys_department
+        set department_sort=department_sort+1,
+        gmt_modified=NOW()
+        <where>
+            parent_id = #{pid,jdbcType=INTEGER}
+            <if test="minSort!=null">
+                AND department_sort &gt;= #{minSort,jdbcType=INTEGER}
+            </if>
+            <if test="maxValue!=null">
+                AND department_sort &lt;= #{maxValue,jdbcType=INTEGER}
+            </if>
+        </where>
+    </update>
+
+    <!--查询角色的授权情况 by 权限标识-->
+    <update id="updateSortMinus1" >
+        UPDATE sys_department
+        set department_sort=department_sort-1,
+        gmt_modified=NOW()
+        <where>
+            parent_id = #{pid,jdbcType=INTEGER}
+            <if test="minSort!=null">
+                AND department_sort &gt;= #{minSort,jdbcType=INTEGER}
+            </if>
+            <if test="maxValue!=null">
+                AND department_sort &lt;= #{maxValue,jdbcType=INTEGER}
+            </if>
+        </where>
+    </update>
+</mapper>

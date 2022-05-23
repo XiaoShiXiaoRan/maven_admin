@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/aop
+       http://www.springframework.org/schema/aop/spring-aop.xsd
+       http://www.springframework.org/schema/tx
+       http://www.springframework.org/schema/tx/spring-tx.xsd
+       http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+    <!--扫描dao，service层-->
+    <context:component-scan base-package="com.gx.dao,com.gx.service">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Component"/>
+    </context:component-scan>
+
+    <!--加载jdbc.properties-->
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+
+    <!--配置数据源-->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <!--数据库驱动类名-->
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <!--数据库连接字符串-->
+        <property name="url" value="${jdbc.url}"/>
+<!--        <property name="url" value="jdbc:mysql://localhost:3306/base_admin?characterEncoding=UTF-8&amp;serverTimezone=Asia/Shanghai&amp;useSSL=false"/>-->
+        <!--用户名
+        ！！！注意 不要在这里使用${username}，在Spring的配置文件中会获取到“系统用户名”-->
+        <property name="username" value="${jdbc.username}"/>
+        <!--密码-->
+        <property name="password" value="${jdbc.password}"/>
+    </bean>
+
+    <!--3、MyBatis配置-->
+    <!--MyBatis的sqlSessionFactory 需要mybatis-spring-2.x.x.jar-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!--配置数据源-->
+        <property name="dataSource" ref="dataSource"/>
+        <!--MyBatis配置文件-->
+        <property name="configLocation" value="classpath:mybatis-conf.xml"/>
+        <!--配置MyBatis的 mapper.xml文件-->
+        <property name="mapperLocations" value="classpath:/mappers/*.xml"/>
+    </bean>
+
+    <!--指定 dao接口所在的包，Spring会自动查找类-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!--指定sqlSessionFactory-->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <!--配置dao接口所在的包名-->
+        <property name="basePackage" value="com.gx.dao"/>
+    </bean>
+
+    <!--4、事务管理配置-->
+    <!--配置事务管理器 spring-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!--指定事务管理器管理的数据源-->
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!--基于注解的方式配置事务-->
+    <tx:annotation-driven/>
+
+
+    <!--下面是基于 AOP配置的方式 配置事务-->
+    <!-- 配置事务通知属性 -->
+<!--    <tx:advice id="txAdvice" transaction-manager="transactionManager">-->
+<!--        <tx:attributes>-->
+<!--            &lt;!&ndash;propagation：事务传播属性 指定当前方法必需在事务环境中运行，如果当前有事务-->
+<!--环境就加入当前正在执行的事务环境，如果当前没有事务，就新建一个事务。这是默认值。&ndash;&gt;-->
+<!--            <tx:method name="insert*" propagation="REQUIRED"/>-->
+<!--            <tx:method name="update*" propagation="REQUIRED"/>-->
+<!--            <tx:method name="delete*" propagation="REQUIRED"/>-->
+<!--            <tx:method name="authorize*" propagation="REQUIRED"/>&lt;!&ndash;授权方法&ndash;&gt;-->
+<!--            <tx:method name="select*" propagation="REQUIRED" read-only="true"/>-->
+<!--            <tx:method name="get*" propagation="REQUIRED" read-only="true"/>-->
+<!--            <tx:method name="search*" propagation="REQUIRED" read-only="true"/>-->
+<!--            <tx:method name="find*" propagation="REQUIRED" read-only="true"/>-->
+<!--            <tx:method name="load*" propagation="REQUIRED" read-only="true"/>-->
+<!--            <tx:method name="*" propagation="REQUIRED" read-only="true"/>-->
+<!--        </tx:attributes>-->
+<!--    </tx:advice>-->
+
+<!--    &lt;!&ndash;5、事务切面配置&ndash;&gt;-->
+<!--    <aop:config>-->
+<!--        <aop:pointcut id="myPointcut" expression="execution(* com.gx.service..*Impl.*(..)))"/>-->
+<!--        <aop:advisor advice-ref="txAdvice" pointcut-ref="myPointcut"/>-->
+<!--    </aop:config>-->
+
+
+
+</beans>

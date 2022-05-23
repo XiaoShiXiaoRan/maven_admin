@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace指向持久层（dao）接口
+mapper.xml 和 持久层（dao）接口一一对应-->
+<mapper namespace="com.gx.dao.ISysUserDao">
+
+    <!--结果映射，用于查询语句-->
+    <resultMap id="baseMap" type="com.gx.po.SysUser">
+        <id column="id" property="id" jdbcType="INTEGER" javaType="java.lang.Integer"/>
+        <result column="gmt_create" property="gmtCreate" jdbcType="TIMESTAMP" javaType="java.util.Date"/>
+        <result property="gmtModified" column="gmt_modified" javaType="java.util.Date" jdbcType="TIMESTAMP"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="userName" column="user_name"/>
+        <result property="userPassword" column="user_password"/>
+        <result property="salt" column="salt"/>
+        <result property="departmentId" column="department_id"/>
+        <result property="positionId" column="position_id"/>
+        <result property="roleId" column="role_id"/>
+        <result property="realName" column="real_name"/>
+        <result property="gender" column="gender"/>
+        <result property="birthday" column="birthday" javaType="java.util.Date" jdbcType="DATE"/>
+        <result property="portrait" column="portrait"/>
+        <result property="email" column="email"/>
+        <result property="mobile" column="mobile"/>
+        <result property="qq" column="qq"/>
+        <result property="wechat" column="wechat"/>
+        <result property="userStatus" column="user_status"/>
+        <result property="loginCount" column="login_count"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+    <!--UserVo 映射-->
+    <resultMap id="userVoMap" type="com.gx.vo.UserVo" extends="baseMap">
+        <result property="departmentName" column="department_name"/>
+        <result property="positionName" column="position_name"/>
+        <result property="roleName" column="role_name"/>
+    </resultMap>
+
+    <sql id="sysUserCol">
+        sys_user.id,sys_user.user_name,sys_user.user_password,sys_user.salt,sys_user.department_id,sys_user.position_id,sys_user.role_id,sys_user.real_name,sys_user.gender,sys_user.birthday,sys_user.portrait,sys_user.email,sys_user.mobile,sys_user.qq,sys_user.wechat,sys_user.user_status,sys_user.remark
+    </sql>
+
+    <!--根据用户名查找用户数据 (login)-->
+    <select id="selectUserByName" resultMap="userVoMap">
+        SELECT
+        <include refid="sysUserCol"/>,
+        sys_department.department_name,
+        sys_position.position_name,
+        sys_role.role_name
+        FROM sys_user
+        INNER JOIN sys_department ON sys_user.department_id = sys_department.id
+        INNER JOIN sys_position ON sys_user.position_id = sys_position.id
+        INNER JOIN sys_role ON sys_user.role_id = sys_role.id
+        WHERE sys_user.is_deleted = 0
+        AND sys_user.user_name = #{userName}
+    </select>
+
+    <!--统计在使用 指定职位的用户数-->
+    <select id="countUserByPositionId" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT COUNT(id)
+        FROM sys_user
+        WHERE is_deleted = 0
+          AND position_id = #{positionId}
+    </select>
+
+    <!--统计在使用 指定部门的用户数-->
+    <select id="countUserByDepartmentId" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT COUNT(id)
+        FROM sys_user
+        WHERE is_deleted = 0
+          AND department_id = #{departmentId}
+    </select>
+
+    <!--统计在使用 指定角色的用户数-->
+    <select id="countUserByRoleId" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT COUNT(id)
+        FROM sys_user
+        WHERE is_deleted = 0
+          AND role_id = #{roleId}
+    </select>
+
+    <!--查询分页数据-->
+    <select id="selectPageList" resultMap="userVoMap">
+        <bind name="startIndex" value="(page - 1) * limit"/>
+        SELECT sys_user.gmt_create,
+        sys_user.id,
+        sys_user.user_name,
+        sys_user.user_password,
+        sys_user.salt,
+        sys_user.department_id,
+        sys_user.position_id,
+        sys_user.role_id,
+        sys_user.real_name,
+        sys_user.gender,
+        sys_user.birthday,
+        sys_user.portrait,
+        sys_user.email,
+        sys_user.mobile,
+        sys_user.qq,
+        sys_user.wechat,
+        sys_user.user_status,
+        sys_user.remark,
+        sys_department.department_name,
+        sys_position.position_name,
+        sys_role.role_name
+        FROM sys_user
+        INNER JOIN sys_department ON sys_user.department_id = sys_department.id
+        INNER JOIN sys_position ON sys_user.position_id = sys_position.id
+        INNER JOIN sys_role ON sys_user.role_id = sys_role.id
+        <where>
+            sys_user.is_deleted = 0
+            <if test="userName!=null">
+                AND sys_user.user_name LIKE CONCAT('%',CONCAT(#{userName},'%'))
+            </if>
+            <if test="realName!=null">
+                AND sys_user.real_name LIKE CONCAT('%',CONCAT(#{realName},'%'))
+            </if>
+            <if test="mobile!=null">
+                AND sys_user.mobile LIKE CONCAT('%',CONCAT(#{mobile},'%'))
+            </if>
+            <if test="departmentIds!=null and departmentIds.length>0">
+                AND sys_user.department_id IN
+                <foreach collection="departmentIds" item="departmentId"
+                         open="(" close=")" separator=",">
+                    #{departmentId}
+                </foreach>
+            </if>
+            <if test="userStatus!=null">
+                AND sys_user.user_status =#{userStatus}
+            </if>
+            <if test="startDate!=null">
+                AND sys_user.gmt_create &gt;= #{startDate}
+            </if>
+            <if test="endDate!=null">
+                AND sys_user.gmt_create &lt;= #{endDate}
+            </if>
+        </where>
+        LIMIT #{startIndex}, #{limit}
+    </select>
+
+    <!--统计员工数据总条数-->
+    <select id="countAll" resultType="java.lang.Integer">
+        SELECT COUNT(sys_user.id)
+        FROM sys_user
+        INNER JOIN sys_department ON sys_user.department_id = sys_department.id
+        INNER JOIN sys_position ON sys_user.position_id = sys_position.id
+        INNER JOIN sys_role ON sys_user.role_id = sys_role.id
+        <where>
+            sys_user.is_deleted = 0
+            <if test="userName!=null">
+                AND sys_user.user_name LIKE CONCAT('%',CONCAT(#{userName},'%'))
+            </if>
+            <if test="realName!=null">
+                AND sys_user.real_name LIKE CONCAT('%',CONCAT(#{realName},'%'))
+            </if>
+            <if test="mobile!=null">
+                AND sys_user.mobile LIKE CONCAT('%',CONCAT(#{mobile},'%'))
+            </if>
+            <if test="departmentIds!=null and departmentIds.length>0">
+                AND sys_user.department_id IN
+                <foreach collection="departmentIds" item="departmentId"
+                         open="(" close=")" separator=",">
+                    #{departmentId}
+                </foreach>
+            </if>
+            <if test="userStatus!=null">
+                AND sys_user.user_status =#{userStatus}
+            </if>
+            <if test="startDate!=null">
+                AND sys_user.gmt_create &gt;= #{startDate}
+            </if>
+            <if test="endDate!=null">
+                AND sys_user.gmt_create &lt;= #{endDate}
+            </if>
+        </where>
+    </select>
+
+    <!--查询数据 for 导出-->
+    <select id="selectForExport" resultMap="userVoMap">
+        SELECT sys_user.gmt_create,
+        sys_user.id,
+        sys_user.user_name,
+        sys_user.user_password,
+        sys_user.salt,
+        sys_user.department_id,
+        sys_user.position_id,
+        sys_user.role_id,
+        sys_user.real_name,
+        sys_user.gender,
+        sys_user.birthday,
+        sys_user.portrait,
+        sys_user.email,
+        sys_user.mobile,
+        sys_user.qq,
+        sys_user.wechat,
+        sys_user.user_status,
+        sys_user.remark,
+        sys_department.department_name,
+        sys_position.position_name,
+        sys_role.role_name
+        FROM sys_user
+        INNER JOIN sys_department ON sys_user.department_id = sys_department.id
+        INNER JOIN sys_position ON sys_user.position_id = sys_position.id
+        INNER JOIN sys_role ON sys_user.role_id = sys_role.id
+        <where>
+            sys_user.is_deleted = 0
+            <if test="userName!=null">
+                AND sys_user.user_name LIKE CONCAT('%',CONCAT(#{userName},'%'))
+            </if>
+            <if test="realName!=null">
+                AND sys_user.real_name LIKE CONCAT('%',CONCAT(#{realName},'%'))
+            </if>
+            <if test="mobile!=null">
+                AND sys_user.mobile LIKE CONCAT('%',CONCAT(#{mobile},'%'))
+            </if>
+            <if test="departmentIds!=null and departmentIds.length>0">
+                AND sys_user.department_id IN
+                <foreach collection="departmentIds" item="departmentId"
+                         open="(" close=")" separator=",">
+                    #{departmentId}
+                </foreach>
+            </if>
+            <if test="userStatus!=null">
+                AND sys_user.user_status =#{userStatus}
+            </if>
+            <if test="startDate!=null">
+                AND sys_user.gmt_create &gt;= #{startDate}
+            </if>
+            <if test="endDate!=null">
+                AND sys_user.gmt_create &lt;= #{endDate}
+            </if>
+        </where>
+    </select>
+
+    <!--根据id查询员工数据-->
+    <select id="selectById" resultMap="baseMap">
+        SELECT
+        <include refid="sysUserCol"/>
+        from sys_user
+        where id=#{id}
+    </select>
+
+
+    <!--新增员工-->
+    <insert id="insert" parameterType="com.gx.po.SysUser">
+        insert into sys_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            gmt_create,
+            <if test="gmtModified != null">gmt_modified,</if>
+            <if test="isDeleted != null">is_deleted,</if>
+            <if test="userName != null">user_name,</if>
+            <if test="userPassword != null">user_password,</if>
+            <if test="salt != null">salt,</if>
+            <if test="departmentId != null">department_id,</if>
+            <if test="positionId != null">position_id,</if>
+            <if test="roleId != null">role_id,</if>
+            <if test="realName != null">real_name,</if>
+            <if test="gender != null">gender,</if>
+            <if test="birthday != null">birthday,</if>
+            <if test="portrait != null">portrait,</if>
+            <if test="email != null">email,</if>
+            <if test="mobile != null">mobile,</if>
+            <if test="qq != null">qq,</if>
+            <if test="wechat != null">wechat,</if>
+            <if test="userStatus != null">user_status,</if>
+            <if test="loginCount != null">login_count,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            NOW(),
+            <if test="gmtModified != null">#{gmtModified,jdbcType=TIMESTAMP},</if>
+            <if test="isDeleted != null">#{isDeleted,jdbcType=TINYINT},</if>
+            <if test="userName != null">#{userName,jdbcType=VARCHAR},</if>
+            <if test="userPassword != null">#{userPassword,jdbcType=CHAR},</if>
+            <if test="salt != null">#{salt,jdbcType=CHAR},</if>
+            <if test="departmentId != null">#{departmentId,jdbcType=INTEGER},</if>
+            <if test="positionId != null">#{positionId,jdbcType=INTEGER},</if>
+            <if test="roleId != null">#{roleId,jdbcType=INTEGER},</if>
+            <if test="realName != null">#{realName,jdbcType=VARCHAR},</if>
+            <if test="gender != null">#{gender,jdbcType=TINYINT},</if>
+            <if test="birthday != null">#{birthday,jdbcType=DATE},</if>
+            <if test="portrait != null">#{portrait,jdbcType=VARCHAR},</if>
+            <if test="email != null">#{email,jdbcType=VARCHAR},</if>
+            <if test="mobile != null">#{mobile,jdbcType=VARCHAR},</if>
+            <if test="qq != null">#{qq,jdbcType=VARCHAR},</if>
+            <if test="wechat != null">#{wechat,jdbcType=VARCHAR},</if>
+            <if test="userStatus != null">#{userStatus,jdbcType=TINYINT},</if>
+            <if test="loginCount != null">#{loginCount,jdbcType=INTEGER},</if>
+            <if test="remark != null">#{remark,jdbcType=VARCHAR},</if>
+        </trim>
+    </insert>
+
+    <!--修改员工-->
+    <update id="update" parameterType="com.gx.po.SysUser">
+        update sys_user
+        <set>
+            <if test="gmtCreate != null">gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},</if>
+            gmt_modified = NOW(),
+            <if test="isDeleted != null">is_deleted = #{isDeleted,jdbcType=TINYINT},</if>
+            <if test="userName != null">user_name = #{userName,jdbcType=VARCHAR},</if>
+            <if test="userPassword != null">user_password = #{userPassword,jdbcType=CHAR},</if>
+            <if test="salt != null">salt = #{salt,jdbcType=CHAR},</if>
+            <if test="departmentId != null">department_id = #{departmentId,jdbcType=INTEGER},</if>
+            <if test="positionId != null">position_id = #{positionId,jdbcType=INTEGER},</if>
+            <if test="roleId != null">role_id = #{roleId,jdbcType=INTEGER},</if>
+            <if test="realName != null">real_name = #{realName,jdbcType=VARCHAR},</if>
+            <if test="gender != null">gender = #{gender,jdbcType=TINYINT},</if>
+            <if test="birthday != null">birthday = #{birthday,jdbcType=DATE},</if>
+            <if test="portrait != null">portrait = #{portrait,jdbcType=VARCHAR},</if>
+            <if test="email != null">email = #{email,jdbcType=VARCHAR},</if>
+            <if test="mobile != null">mobile = #{mobile,jdbcType=VARCHAR},</if>
+            <if test="qq != null">qq = #{qq,jdbcType=VARCHAR},</if>
+            <if test="wechat != null">wechat = #{wechat,jdbcType=VARCHAR},</if>
+            <if test="userStatus != null">user_status = #{userStatus,jdbcType=TINYINT},</if>
+            <if test="loginCount != null">login_count = #{loginCount,jdbcType=INTEGER},</if>
+            <if test="remark != null">remark = #{remark,jdbcType=VARCHAR},</if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!--删除员工-->
+    <update id="deleteById" parameterType="java.lang.Integer">
+        update sys_user
+        set is_deleted=1
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!--查询返回所有用户-->
+    <select id="selectAll" resultMap="baseMap">
+        SELECT
+        <include refid="sysUserCol"/>
+        from sys_user
+    </select>
+
+</mapper>

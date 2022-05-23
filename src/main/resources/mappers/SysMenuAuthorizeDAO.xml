@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gx.dao.ISysMenuAuthorizeDao">
+    <resultMap id="BaseResultMap" type="com.gx.po.SysMenuAuthorize">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate"/>
+        <result column="menu_id" jdbcType="INTEGER" property="menuId"/>
+        <result column="role_id" jdbcType="INTEGER" property="roleId"/>
+    </resultMap>
+
+    <resultMap id="SysMenuResultMap" type="com.gx.po.SysMenu">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate"/>
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified"/>
+        <result column="parent_id" jdbcType="INTEGER" property="parentId"/>
+        <result column="menu_name" jdbcType="VARCHAR" property="menuName"/>
+        <result column="menu_icon" jdbcType="VARCHAR" property="menuIcon"/>
+        <result column="menu_url" jdbcType="VARCHAR" property="menuUrl"/>
+        <result column="menu_sort" jdbcType="INTEGER" property="menuSort"/>
+        <result column="menu_type" jdbcType="TINYINT" property="menuType"/>
+        <result column="menu_status" jdbcType="TINYINT" property="menuStatus"/>
+        <result column="authorize" jdbcType="VARCHAR" property="authorize"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, gmt_create, menu_id, role_id
+    </sql>
+
+    <!--根据角色id查询所有的授权-->
+    <select id="selectAuthorizeByRoleId" resultMap="SysMenuResultMap">
+        SELECT sys_menu.id,
+               sys_menu.parent_id,
+               sys_menu.menu_name,
+               sys_menu.menu_icon,
+               sys_menu.menu_url,
+               sys_menu.menu_sort,
+               sys_menu.menu_type,
+               sys_menu.menu_status,
+               sys_menu.authorize,
+               sys_menu.remark
+        FROM sys_menu_authorize
+                 INNER JOIN sys_menu ON sys_menu_authorize.menu_id = sys_menu.id
+        WHERE sys_menu_authorize.role_id = #{roleId,jdbcType=INTEGER}
+    </select>
+
+    <!--查询所有的菜单(权限)id 通过 角色id-->
+    <select id="selectMenuIdByRoleId" resultType="java.lang.Integer">
+        SELECT menu_id
+        FROM sys_menu_authorize
+        WHERE role_id = #{roleId,jdbcType=INTEGER}
+    </select>
+
+    <!--新增 授权-->
+    <insert id="insert" parameterType="com.gx.po.SysMenuAuthorize">
+        insert into sys_menu_authorize
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            gmt_create,
+            <if test="menuId != null">menu_id,</if>
+            <if test="roleId != null">role_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            NOW(),
+            <if test="menuId != null">#{menuId,jdbcType=INTEGER},</if>
+            <if test="roleId != null">#{roleId,jdbcType=INTEGER},</if>
+        </trim>
+    </insert>
+
+    <!--删除 授权-->
+    <delete id="deleteById" parameterType="java.lang.Integer">
+        delete
+        from sys_menu_authorize
+        where role_id = #{roleId,jdbcType=INTEGER}
+          and menu_id = #{menuId,jdbcType=INTEGER}
+    </delete>
+
+    <!--查询角色的授权情况 by 菜单URL-->
+    <select id="hasRoleAuthByMenuUrl" resultType="java.lang.Integer">
+        SELECT COUNT(sys_menu_authorize.id) as count
+        FROM sys_menu_authorize
+            INNER JOIN sys_menu
+        ON sys_menu_authorize.menu_id = sys_menu.id
+        WHERE role_id=#{roleId,jdbcType=INTEGER}
+          AND sys_menu.menu_url = #{menuUrl,jdbcType=VARCHAR}
+    </select>
+
+    <!--查询角色的授权情况 by 权限标识-->
+    <select id="hasRoleAuthByAuthorize" resultType="java.lang.Integer">
+        SELECT COUNT(sys_menu_authorize.id) as count
+        FROM sys_menu_authorize
+            INNER JOIN sys_menu
+        ON sys_menu_authorize.menu_id = sys_menu.id
+        WHERE role_id=#{roleId,jdbcType=INTEGER}
+          AND sys_menu.authorize = #{authorize,jdbcType=VARCHAR}
+    </select>
+</mapper>

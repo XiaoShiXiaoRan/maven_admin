@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gx.dao.ISysRoleDao">
+    <resultMap id="BaseResultMap" type="com.gx.po.SysRole">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate"/>
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified"/>
+        <result column="role_name" jdbcType="VARCHAR" property="roleName"/>
+        <result column="role_sort" jdbcType="INTEGER" property="roleSort"/>
+        <result column="role_status" jdbcType="TINYINT" property="roleStatus"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        id
+        , gmt_create, gmt_modified, role_name, role_sort, role_status, remark
+    </sql>
+
+    <!--分页查询角色-->
+    <select id="selectForPageList" resultMap="BaseResultMap">
+        <!--MyBatis Bind计算分页开始索引-->
+        <bind name="startIndex" value="(page-1) * limit"/>
+        select
+        <include refid="Base_Column_List"/>
+        from sys_role
+        <where>
+            <if test="searchName!=null">
+                role_name LIKE CONCAT('%',CONCAT(#{searchName,jdbcType=VARCHAR},'%'))
+            </if>
+            <if test="status!=null">
+                AND role_status=#{status,jdbcType=TINYINT}
+            </if>
+        </where>
+        ORDER BY role_sort
+        LIMIT #{startIndex,jdbcType=INTEGER},#{limit,jdbcType=INTEGER}
+    </select>
+
+    <!--查询所有角色数据-->
+    <select id="selectAll" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_role
+    </select>
+
+    <!--根据id查询角色信息-->
+    <select id="selectById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_role
+        where id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <!--统计角色数据总条数-->
+    <select id="countAll" resultType="java.lang.Integer">
+        select COUNT(id)
+        from sys_role
+        <where>
+            <if test="searchName!=null">
+                role_name LIKE CONCAT('%',CONCAT(#{searchName,jdbcType=VARCHAR},'%'))
+            </if>
+            <if test="status!=null">
+                AND role_status=#{status,jdbcType=TINYINT}
+            </if>
+        </where>
+
+    </select>
+
+    <!--新增角色-->
+    <insert id="insert" parameterType="com.gx.po.SysRole">
+        insert into sys_role
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            gmt_create,
+            <if test="gmtModified != null">gmt_modified,</if>
+            <if test="roleName != null">role_name,</if>
+            <if test="roleSort != null">role_sort,</if>
+            <if test="roleStatus != null">role_status,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            NOW(),
+            <if test="gmtModified != null">#{gmtModified,jdbcType=TIMESTAMP},</if>
+            <if test="roleName != null">#{roleName,jdbcType=VARCHAR},</if>
+            <if test="roleSort != null">#{roleSort,jdbcType=INTEGER},</if>
+            <if test="roleStatus != null">#{roleStatus,jdbcType=TINYINT},</if>
+            <if test="remark != null">#{remark,jdbcType=VARCHAR},</if>
+        </trim>
+    </insert>
+
+    <!--修改角色-->
+    <update id="update" parameterType="com.gx.po.SysRole">
+        update sys_role
+        <set>
+            <if test="gmtCreate != null">gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},</if>
+            <if test="gmtModified != null">gmt_modified =NOW(),</if>
+            <if test="roleName != null">role_name = #{roleName,jdbcType=VARCHAR},</if>
+            <if test="roleSort != null">role_sort = #{roleSort,jdbcType=INTEGER},</if>
+            <if test="roleStatus != null">role_status = #{roleStatus,jdbcType=TINYINT},</if>
+            <if test="remark != null">remark = #{remark,jdbcType=VARCHAR},</if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!--根际id删除角色信息-->
+    <delete id="deleteById" parameterType="java.lang.Integer">
+        delete
+        from sys_role
+        where id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <!--更新排序 +1-->
+    <update id="updateSortPlus1">
+        UPDATE sys_role
+        set role_sort=role_sort+1,
+        gmt_modified=NOW()
+        <where>
+            <if test="minSort!=null">
+                AND role_sort &gt;= #{minSort,jdbcType=INTEGER}
+            </if>
+            <if test="maxValue!=null">
+                AND role_sort &lt;= #{maxValue,jdbcType=INTEGER}
+            </if>
+        </where>
+    </update>
+
+    <!--更新排序 -1-->
+    <update id="updateSortMinus1">
+        UPDATE sys_role
+        set role_sort=role_sort-1,
+        gmt_modified=NOW()
+        <where>
+            <if test="minSort!=null">
+                AND role_sort &gt;= #{minSort,jdbcType=INTEGER}
+            </if>
+            <if test="maxValue!=null">
+                AND role_sort &lt;= #{maxValue,jdbcType=INTEGER}
+            </if>
+        </where>
+    </update>
+
+</mapper>

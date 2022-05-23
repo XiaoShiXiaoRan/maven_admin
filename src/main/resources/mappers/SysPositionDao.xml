@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gx.dao.ISysPositionDao">
+    <resultMap id="BaseResultMap" type="com.gx.po.SysPosition">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate"/>
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified"/>
+        <result column="position_name" jdbcType="VARCHAR" property="positionName"/>
+        <result column="position_sort" jdbcType="INTEGER" property="positionSort"/>
+        <result column="position_status" jdbcType="TINYINT" property="positionStatus"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+    </resultMap>
+
+    <!--分页查询职位-->
+    <select id="selectForPageList" resultMap="BaseResultMap">
+        <bind name="startIndex" value="(page - 1) * limit"/>
+        SELECT id, gmt_create, position_name, position_sort, position_status, remark
+        FROM sys_position
+        <where>
+            <if test="searchName!=null">
+                AND position_name LIKE CONCAT('%',CONCAT(#{searchName},'%'))
+            </if>
+            <if test="status!=null">
+                AND position_status = #{status}
+            </if>
+        </where>
+        ORDER BY position_sort
+        LIMIT #{startIndex}, #{limit}
+    </select>
+
+    <!--返回数据总条数-->
+    <select id="countAll" resultType="java.lang.Integer">
+        SELECT COUNT(id)
+        FROM sys_position
+        <where>
+            <if test="searchName!=null">
+                AND position_name LIKE CONCAT('%',CONCAT(#{searchName},'%'))
+            </if>
+            <if test="status!=null">
+                AND position_status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!--根据id查询职位信息-->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT id, gmt_create, position_name, position_sort, position_status, remark
+        FROM sys_position
+        WHERE id=#{id}
+    </select>
+
+    <!--查询全部职位-->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT id, gmt_create, position_name, position_sort, position_status, remark
+        FROM sys_position
+    </select>
+
+    <!--新增职位-->
+    <insert id="insert" parameterType="com.gx.po.SysPosition">
+        insert into sys_position
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            gmt_create,
+            <if test="gmtModified != null">gmt_modified,</if>
+            <if test="positionName != null">position_name,</if>
+            <if test="positionSort != null">position_sort,</if>
+            <if test="positionStatus != null">position_status,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            NOW(),
+            <if test="gmtModified != null">#{gmtModified,jdbcType=TIMESTAMP},</if>
+            <if test="positionName != null">#{positionName,jdbcType=VARCHAR},</if>
+            <if test="positionSort != null">#{positionSort,jdbcType=INTEGER},</if>
+            <if test="positionStatus != null">#{positionStatus,jdbcType=TINYINT},</if>
+            <if test="remark != null">#{remark,jdbcType=VARCHAR},</if>
+        </trim>
+    </insert>
+
+    <!--修改职位-->
+    <update id="update" parameterType="com.gx.po.SysPosition">
+        update sys_position
+        <set>
+            <if test="gmtCreate != null">gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},</if>
+            gmt_modified = NOW(),
+            <if test="positionName != null">position_name = #{positionName,jdbcType=VARCHAR},</if>
+            <if test="positionSort != null">position_sort = #{positionSort,jdbcType=INTEGER},</if>
+            <if test="positionStatus != null">position_status = #{positionStatus,jdbcType=TINYINT},</if>
+            <if test="remark != null">remark = #{remark,jdbcType=VARCHAR},</if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!--根据id删除职位信息-->
+    <delete id="deleteById" parameterType="java.lang.Integer">
+        delete from sys_position
+        where id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <!--更新排序 +1-->
+    <update id="updateSortPlus1" >
+        UPDATE sys_position
+        set position_sort=position_sort+1,
+        gmt_modified=NOW()
+        <where>
+            <if test="minSort!=null">
+                AND position_sort &gt;= #{minSort,jdbcType=INTEGER}
+            </if>
+            <if test="maxValue!=null">
+                AND position_sort &lt;= #{maxValue,jdbcType=INTEGER}
+            </if>
+        </where>
+    </update>
+
+    <!--更新排序 -1-->
+    <update id="updateSortMinus1">
+        UPDATE sys_position
+        set position_sort=position_sort-1,
+        gmt_modified=NOW()
+        <where>
+            <if test="minSort!=null">
+                AND position_sort &gt;= #{minSort,jdbcType=INTEGER}
+            </if>
+            <if test="maxValue!=null">
+                AND position_sort &lt;= #{maxValue,jdbcType=INTEGER}
+            </if>
+        </where>
+    </update>
+</mapper>
