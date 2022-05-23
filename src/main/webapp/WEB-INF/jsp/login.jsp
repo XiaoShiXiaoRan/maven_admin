@@ -12,7 +12,7 @@
 <!DOCTYPE html>
 <html class="x-admin-sm">
 <head>
-    <title>后台登录</title>
+    <title>admin</title>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport"
           content="width=device-width,user-scalable=yes, minimum-scale=0.4,
